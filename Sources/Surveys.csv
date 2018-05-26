@@ -1,0 +1,23 @@
+Language,Q1_Academic,Q2_Current,Combined,Q1_Academic_Perc,Q2_Current_Perc
+Java,224,180,404,0.241639698,0.1706161137
+Python,100,228,328,0.1078748652,0.2161137441
+JavaScript,43,180,223,0.046386192,0.1706161137
+C++,134,130,264,0.1445523193,0.1232227488
+C,168,103,271,0.1812297735,0.0976303318
+C#,46,87,133,0.049622438,0.082464455
+SQL,38,71,109,0.0409924488,0.0672985782
+PHP,34,39,73,0.0366774542,0.0369668246
+Assembly,84,20,104,0.0906148867,0.018957346
+MATLAB,56,17,73,0.0604099245,0.0161137441
+,927,1055,1982,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+Question,Text,,,,
+Q1_Academic,languages you were formally taught/used in school or University? trying to gauge what academia teaches,,,,
+Q2_Current,"languages you are currently the most familiar with, and use on a regular basis for school, work, research, or personal projects? (just curious what the language mix of this group is)",,,,
