@@ -42,9 +42,11 @@ colornames_sortedlst = sorted(main_survey_df['Language'].unique())
 colorhex_sortedlst = [colors_ref.at[cname, 'color'] for cname in colornames_sortedlst]
 
 """
-STEP 2: creating Language Label images
+STEP 2: defining Create Language Label Image
 """
-for lang_name in colornames_sortedlst:
+def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name):
+	# addition to lang_rank
+	lang_rank += 1
 	# finding lang color using Ref table
 	lang_color = colors_ref.at[lang_name, 'color']
 	
@@ -59,36 +61,69 @@ for lang_name in colornames_sortedlst:
 	
 	os.chdir('..')
 	
-	print(lang_name, lang_logo.size)
-	
 	# creating white background
-	background_img = Image.new('RGBA', (680, 280), 'white')
+	background_img = Image.new('RGBA', (580, 190), 'white')
 	# adding border
-	background_img = ImageOps.expand(background_img, border = 10, fill = lang_color)
+	background_img = ImageOps.expand(background_img, border = 5, fill = lang_color)
 	
+	
+	'''Logo'''
 	# resizing LangLogo
-	lang_logo = lang_logo.resize((240,240))
+	# if WIDE, then scale the height according to width
+	if lang_logo.size[0] > lang_logo.size[1]:
+		# since WIDE, we find the nu_height
+		nuheight_float = (160/lang_logo.size[0]) * lang_logo.size[1]
+		nuheight_int = round(nuheight_float/2.0) * 2
+		# resiziing LangLogo
+		lang_logo = lang_logo.resize((160, nuheight_int))
+	# if TALL, then scale the width according to the height
+	elif lang_logo.size[1] > lang_logo.size[0]:
+		# since TALL, we find NuWidth
+		nuwidth_float = (160/lang_logo.size[1]) * lang_logo.size[0]
+		nuwidth_int = round(nuwidth_float/2.0) * 2
+		# resizing LangLogo
+		lang_logo = lang_logo.resize((nuwidth_int, 160))
+	# if neither tall nor wide, then EVEN, and just resize to 160,160
+	else:
+		lang_logo = lang_logo.resize((160,160))
 	
 	# pasting LangLogo onto background, creating full image
 	full_img = background_img.copy()
+	# calculating the position of the logo
+	logo_position = (int(20 + (160-lang_logo.size[0])/2), int(20 + (160-lang_logo.size[1])/2))
 	# try as mask
 	try:
-		full_img.paste(lang_logo, (30,30), mask = lang_logo)
+		full_img.paste(lang_logo, logo_position, mask = lang_logo)
 	# if logo is no mask, paste as normal
 	except ValueError:
-		full_img.paste(lang_logo, (30,30))
+		full_img.paste(lang_logo, logo_position)
 	
-	# creating colored font
-	lang_fnt = ImageFont.truetype('ARLRDBD.TTF', 72)
-	# finding label size, given the name
-	lang_labelsize = lang_fnt.getsize(lang_name)
-	# determining location of the Language Label
+	'''Title'''
+	# defining Lang Title Str for the #2 current tie
+	if q_name == 'Q2Current' and lang_name in ['Java', 'JavaScript']:
+		lang_title_str = '2: ' + lang_name
+	# defining the normal Lang Title Str
+	else:
+		lang_title_str = str(lang_rank) + ': ' + lang_name
 	
+	# determing which font number is closest to 65 height for the Title
+	for fsize in np.arange(100,0,-1):
+		# creating langFont
+		lang_title_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
+		# testing if at or below 65, breaking if so
+		if lang_title_fnt.getsize(lang_title_str)[1] <= 60:
+			break
 	
-	# draw object
+	# determining Title position
+	lang_title_position = (200,20)
+	# creating draw object
 	full_draw = ImageDraw.Draw(full_img)
+	# drawing colored center
+	full_draw.text(lang_title_position, lang_title_str, fill = lang_color, font = lang_title_fnt)
 	
 	# drawing black outline... anchor is (290, 30)
+	# FIX LATER
+	'''
 	for position_tup in (list(it.product(np.arange(287, 294), [18])) +	#top border
 							  list(it.product(np.arange(289, 291), [17])) +	#top border extra
 							  list(it.product([292], np.arange(18, 23))) +	#right border
@@ -98,14 +133,74 @@ for lang_name in colornames_sortedlst:
 							  list(it.product([288], np.arange(18,23))) +	#left border
 							  list(it.product([287], np.arange(19,22)))):	#left border extra
 		full_draw.text(position_tup, lang_name, fill = 'black', font = lang_fnt)
+	'''
 	
-	# drawing colored center
-	full_draw.text((290,20), lang_name, fill = lang_color, font = lang_fnt)
+	'''Vote Info'''
+	# defining Lang VotePerc Str
+	lang_voteperc_str = '{:.1%}'.format(vote_percent)
 	
-	# saving image
+	# determing which font number is closest to 40 height for the Percent
+	for fsize in np.arange(100,0,-1):
+		# creating langFont
+		lang_voteperc_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
+		# testing if below 80, breaking if so
+		if lang_voteperc_fnt.getsize(lang_voteperc_str)[1] <= 40:
+			break
+	
+	# defining Lang VotePerc Size
+	lang_voteperc_size = lang_voteperc_fnt.getsize(lang_voteperc_str)
+	# drawing Lang VotePerc
+	full_draw.text((250, 100), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
+	
+	# defining Lang VoteCount Str
+	lang_votecount_str = '(' + str(int(vote_count)) + ' votes)'
+	
+	# determing which font number is closest to 25 height for the Count
+	for fsize in np.arange(100,0,-1):
+		# creating langFont
+		lang_votecount_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
+		# testing if below 80, breaking if so
+		if lang_votecount_fnt.getsize(lang_votecount_str)[1] <= 25:
+			break	
+	
+	# defining Lang VoteCount Size
+	lang_votecount_size = lang_votecount_fnt.getsize(lang_votecount_str)
+	# drawing Lang VoteCount
+	full_draw.text((270 + lang_voteperc_size[0], 140 - lang_votecount_size[1]),
+						lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
+		
+	# moving into proper folder and saving image
 	os.chdir('.\LanguageLabels')
-	full_img.save(lang_name+'.png')
+	full_img.save(q_name + '_' + str(lang_rank) + lang_name + '.png')
 	os.chdir('..')
+
+'''applying function'''
+# Q1
+q1_df = main_survey_df[['Language', 'Q1_Academic', 'Q1_Academic_Perc']]
+# sorting
+q1_df = q1_df.sort_values('Q1_Academic', ascending = False).reset_index(drop = True)
+
+# iterating through each Q1 row
+for tmp_i, tmp_row in q1_df.iterrows():
+	# running function
+	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
+							   vote_percent = tmp_row['Q1_Academic_Perc'],
+							   vote_count = tmp_row['Q1_Academic'],
+							   q_name = 'Q1Academic')
+
+# Q2
+q2_df = main_survey_df[['Language', 'Q2_Current', 'Q2_Current_Perc']]
+# sorting
+q2_df = q2_df.sort_values('Q2_Current', ascending = False).reset_index(drop = True)
+
+# iterating through each Q1 row
+for tmp_i, tmp_row in q2_df.iterrows():
+	# running function
+	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
+							   vote_percent = tmp_row['Q2_Current_Perc'],
+							   vote_count = tmp_row['Q2_Current'],
+							   q_name = 'Q2Current')
+
 
 """
 STEP 3: ggplotting
