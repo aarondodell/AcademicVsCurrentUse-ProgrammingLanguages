@@ -45,6 +45,7 @@ colorhex_sortedlst = [colors_ref.at[cname, 'color'] for cname in colornames_sort
 STEP 2: defining Create Language Label Image
 """
 def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name):
+	'''finding Color and finding Logo image'''
 	# addition to lang_rank
 	lang_rank += 1
 	# finding lang color using Ref table
@@ -59,13 +60,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	else:
 		lang_logo = Image.open(lang_name+'.png')
 	
-	os.chdir('..')
-	
-	# creating white background
-	background_img = Image.new('RGBA', (580, 190), 'white')
-	# adding border
-	background_img = ImageOps.expand(background_img, border = 5, fill = lang_color)
-	
+	os.chdir('..')	
 	
 	'''Logo'''
 	# resizing LangLogo
@@ -87,26 +82,17 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	else:
 		lang_logo = lang_logo.resize((160,160))
 	
-	# pasting LangLogo onto background, creating full image
-	full_img = background_img.copy()
-	# calculating the position of the logo
-	logo_position = (int(20 + (160-lang_logo.size[0])/2), int(20 + (160-lang_logo.size[1])/2))
-	# try as mask
-	try:
-		full_img.paste(lang_logo, logo_position, mask = lang_logo)
-	# if logo is no mask, paste as normal
-	except ValueError:
-		full_img.paste(lang_logo, logo_position)
+	
 	
 	'''Title'''
 	# defining Lang Title Str for the #2 current tie
 	if q_name == 'Q2Current' and lang_name in ['Java', 'JavaScript']:
-		lang_title_str = '2: ' + lang_name
+		lang_title_str = '2 (tie): ' + lang_name
 	# defining the normal Lang Title Str
 	else:
 		lang_title_str = str(lang_rank) + ': ' + lang_name
 	
-	# determing which font number is closest to 65 height for the Title
+	# determing which font number is closest to 60 height for the Title
 	for fsize in np.arange(100,0,-1):
 		# creating langFont
 		lang_title_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
@@ -114,28 +100,10 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 		if lang_title_fnt.getsize(lang_title_str)[1] <= 60:
 			break
 	
-	# determining Title position
-	lang_title_position = (200,20)
-	# creating draw object
-	full_draw = ImageDraw.Draw(full_img)
-	# drawing colored center
-	full_draw.text(lang_title_position, lang_title_str, fill = lang_color, font = lang_title_fnt)
+	# finding the size of the title
+	lang_title_size = lang_title_fnt.getsize(lang_title_str)
 	
-	# drawing black outline... anchor is (290, 30)
-	# FIX LATER
-	'''
-	for position_tup in (list(it.product(np.arange(287, 294), [18])) +	#top border
-							  list(it.product(np.arange(289, 291), [17])) +	#top border extra
-							  list(it.product([292], np.arange(18, 23))) +	#right border
-							  list(it.product([293], np.arange(19, 22))) +	#right border extra
-							  list(it.product(np.arange(287,294), [22])) +	#bottom border
-							  list(it.product(np.arange(289,291), [23])) +	#bottom border extra
-							  list(it.product([288], np.arange(18,23))) +	#left border
-							  list(it.product([287], np.arange(19,22)))):	#left border extra
-		full_draw.text(position_tup, lang_name, fill = 'black', font = lang_fnt)
-	'''
-	
-	'''Vote Info'''
+	'''Vote Perc'''
 	# defining Lang VotePerc Str
 	lang_voteperc_str = '{:.1%}'.format(vote_percent)
 	
@@ -149,9 +117,8 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	
 	# defining Lang VotePerc Size
 	lang_voteperc_size = lang_voteperc_fnt.getsize(lang_voteperc_str)
-	# drawing Lang VotePerc
-	full_draw.text((250, 100), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
 	
+	'''Vote Count'''
 	# defining Lang VoteCount Str
 	lang_votecount_str = '(' + str(int(vote_count)) + ' votes)'
 	
@@ -165,10 +132,65 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	
 	# defining Lang VoteCount Size
 	lang_votecount_size = lang_votecount_fnt.getsize(lang_votecount_str)
+	
+	'''White Background Creation'''
+	# determining the width
+	# first, find the longer length between the Title, or Count
+	farthest_title_x = 200 + lang_title_size[0]
+	farthest_count_x = 270 + lang_voteperc_size[0] + lang_votecount_size[0]
+	
+	# creating Background Size, picking between Farthest Title or Count for the X width
+	if farthest_title_x > farthest_count_x:
+		background_size = (farthest_title_x + 15, 190)
+	else:
+		background_size = (farthest_count_x + 15, 190)
+	
+	# creating white background
+	background_img = Image.new('RGBA', background_size, 'white')
+	# adding border
+	background_img = ImageOps.expand(background_img, border = 5, fill = lang_color)
+	
+	'''Pasting Logo'''
+	# pasting LangLogo onto background, creating full image
+	full_img = background_img.copy()
+	# calculating the position of the logo
+	logo_position = (int(20 + (160-lang_logo.size[0])/2), int(20 + (160-lang_logo.size[1])/2))
+	# try as mask
+	try:
+		full_img.paste(lang_logo, logo_position, mask = lang_logo)
+	# if logo is no mask, paste as normal
+	except ValueError:
+		full_img.paste(lang_logo, logo_position)
+	
+	'''Drawing on Title, Vote Perc, and Vote Count'''
+	# determining Title position
+	lang_title_position = (200,20)
+	# creating draw object
+	full_draw = ImageDraw.Draw(full_img)
+	# drawing colored center
+	full_draw.text(lang_title_position, lang_title_str, fill = lang_color, font = lang_title_fnt)
+	
+	# drawing Lang VotePerc
+	full_draw.text((250, 100), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
+	
 	# drawing Lang VoteCount
 	full_draw.text((270 + lang_voteperc_size[0], 140 - lang_votecount_size[1]),
 						lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
-		
+	
+	# drawing black outline... anchor is (290, 30)
+	# FIX LATER
+	'''
+	for position_tup in (list(it.product(np.arange(287, 294), [18])) +	#top border
+							  list(it.product(np.arange(289, 291), [17])) +	#top border extra
+							  list(it.product([292], np.arange(18, 23))) +	#right border
+							  list(it.product([293], np.arange(19, 22))) +	#right border extra
+							  list(it.product(np.arange(287,294), [22])) +	#bottom border
+							  list(it.product(np.arange(289,291), [23])) +	#bottom border extra
+							  list(it.product([288], np.arange(18,23))) +	#left border
+							  list(it.product([287], np.arange(19,22)))):	#left border extra
+		full_draw.text(position_tup, lang_name, fill = 'black', font = lang_title_fnt)
+	'''
+	
 	# moving into proper folder and saving image
 	os.chdir('.\LanguageLabels')
 	full_img.save(q_name + '_' + str(lang_rank) + lang_name + '.png')
@@ -201,7 +223,6 @@ for tmp_i, tmp_row in q2_df.iterrows():
 							   vote_count = tmp_row['Q2_Current'],
 							   q_name = 'Q2Current')
 
-
 """
 STEP 3: ggplotting
 """
@@ -218,7 +239,7 @@ parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'PercentNum', color = '
 							  data = parallel_df) +
 						geom_point() +
 						geom_line() +
-						geom_label(mapping = aes(label = 'Language')) +
+						#geom_label(mapping = aes(label = 'Language')) +
 						scale_color_manual(values = colorhex_sortedlst, guide = False) +
 						labs(title = 'Programmer Survey: Languages Academic vs. CurrentUse',
 							   x = 'Question', y = 'Percentage') +
