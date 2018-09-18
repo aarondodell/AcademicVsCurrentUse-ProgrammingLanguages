@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import numpy as np
-import itertools as it
 from pytictoc import TicToc
 from PIL import Image, ImageOps, ImageFont, ImageDraw
 from plotnine import *
@@ -224,28 +223,29 @@ for tmp_i, tmp_row in q2_df.iterrows():
 							   q_name = 'Q2Current')
 
 """
-STEP 3: ggplotting
+STEP 3A: initial parallel coordinates plot
 """
-
 # initial Parallel df
 parallel_df = pd.melt(main_survey_df, id_vars = 'Language', value_vars = ['Q1_Academic_Perc', 'Q2_Current_Perc'],
                       var_name = 'QType', value_name = 'Percent')
 
-# assigning PercentNum and Log(1 + percentNum)
-parallel_df['PercentNum'] = parallel_df['Percent'] * 100
-
 # initial ggplot obj
-parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'PercentNum', color = 'Language', group = 'Language'),
-							  data = parallel_df) +
-						geom_point() +
-						geom_line() +
-						#geom_label(mapping = aes(label = 'Language')) +
-						scale_color_manual(values = colorhex_sortedlst, guide = False) +
-						labs(title = 'Programmer Survey: Languages Academic vs. CurrentUse',
-							   x = 'Question', y = 'Percentage') +
-						theme_538())
+parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent', color = 'Language', group = 'Language'),
+						  data = parallel_df) +
+					geom_point() +
+					geom_line() +
+					scale_color_manual(values = colorhex_sortedlst, guide = False) +
+					scale_x_discrete(expand = (0.05,0)) +
+					scale_y_continuous(limits = (0,0.25),
+									   breaks = list(np.arange(0,0.3,0.05)),
+									   labels = ['{:.0%}'.format(num) for num in np.arange(0,0.3, 0.05)],
+									   expand = (0.01,0)) +
+					labs(title = 'Programmer Survey: Languages Academic vs. CurrentUse',
+						 x = 'Question', y = 'Percentage') +
+					theme_538() +
+					theme(axis_title_y = element_blank()))
     
-parallel_ggplot.save('parallel_ggplot.png', width = 5, height = 10, dpi = 200)
+parallel_ggplot.save('parallel_ggplot.png', width = 3, height = 10, dpi = 200)
 
 # TOC
 tt.toc()
