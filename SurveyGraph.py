@@ -61,7 +61,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	
 	os.chdir('..')	
 	
-	'''Logo'''
+	'''Logo resizing'''
 	# resizing LangLogo
 	# if WIDE, then scale the height according to width
 	if lang_logo.size[0] > lang_logo.size[1]:
@@ -77,13 +77,11 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 		nuwidth_int = round(nuwidth_float/2.0) * 2
 		# resizing LangLogo
 		lang_logo = lang_logo.resize((nuwidth_int, 160))
-	# if neither tall nor wide, then EVEN, and just resize to 160,160
+	# if neither tall nor wide, then EVEN, and just resize to 280,280
 	else:
 		lang_logo = lang_logo.resize((160,160))
 	
-	
-	
-	'''Title'''
+	'''Title sizing'''
 	# defining Lang Title Str for the #2 current tie
 	if q_name == 'Q2Current' and lang_name in ['Java', 'JavaScript']:
 		lang_title_str = '2 (tie): ' + lang_name
@@ -91,59 +89,55 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	else:
 		lang_title_str = str(lang_rank) + ': ' + lang_name
 	
-	# determing which font number is closest to 60 height for the Title
+	# determing which font number is closest to 80 height for the Title
 	for fsize in np.arange(100,0,-1):
 		# creating langFont
 		lang_title_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
-		# testing if at or below 65, breaking if so
-		if lang_title_fnt.getsize(lang_title_str)[1] <= 60:
+		# testing if at or below 80, breaking if so
+		if lang_title_fnt.getsize(lang_title_str)[1] <= 80:
 			break
 	
 	# finding the size of the title
 	lang_title_size = lang_title_fnt.getsize(lang_title_str)
 	
-	'''Vote Perc'''
+	'''Vote Perc sizing'''
 	# defining Lang VotePerc Str
 	lang_voteperc_str = '{:.1%}'.format(vote_percent)
 	
-	# determing which font number is closest to 40 height for the Percent
+	# determing which font number is closest to 50 height for the Percent
 	for fsize in np.arange(100,0,-1):
 		# creating langFont
 		lang_voteperc_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
-		# testing if below 80, breaking if so
-		if lang_voteperc_fnt.getsize(lang_voteperc_str)[1] <= 40:
+		# testing if below 50, breaking if so
+		if lang_voteperc_fnt.getsize(lang_voteperc_str)[1] <= 50:
 			break
 	
 	# defining Lang VotePerc Size
 	lang_voteperc_size = lang_voteperc_fnt.getsize(lang_voteperc_str)
 	
-	'''Vote Count'''
+	'''Vote Count sizing'''
 	# defining Lang VoteCount Str
 	lang_votecount_str = '(' + str(int(vote_count)) + ' votes)'
 	
-	# determing which font number is closest to 25 height for the Count
+	# determing which font number is closest to 30 height for the Count
 	for fsize in np.arange(100,0,-1):
 		# creating langFont
 		lang_votecount_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
-		# testing if below 80, breaking if so
-		if lang_votecount_fnt.getsize(lang_votecount_str)[1] <= 25:
+		# testing if below 30, breaking if so
+		if lang_votecount_fnt.getsize(lang_votecount_str)[1] <= 30:
 			break	
 	
 	# defining Lang VoteCount Size
 	lang_votecount_size = lang_votecount_fnt.getsize(lang_votecount_str)
 	
-	'''White Background Creation'''
+	'''White Background creation'''
 	# determining the width
-	# first, find the longer length between the Title, or Count
-	farthest_title_x = 200 + lang_title_size[0]
-	farthest_count_x = 270 + lang_voteperc_size[0] + lang_votecount_size[0]
+	# first, find the longer length between the Title, Perc, and Count
+	farthest_x = max([lang_title_size[0], lang_voteperc_size[0] + 20, lang_votecount_size[0] + 40])
 	
 	# creating Background Size, picking between Farthest Title or Count for the X width
-	if farthest_title_x > farthest_count_x:
-		background_size = (farthest_title_x + 15, 190)
-	else:
-		background_size = (farthest_count_x + 15, 190)
-	
+	background_size = (farthest_x + 215, 190)
+		
 	# creating white background
 	background_img = Image.new('RGBA', background_size, 'white')
 	# adding border
@@ -163,18 +157,17 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	
 	'''Drawing on Title, Vote Perc, and Vote Count'''
 	# determining Title position
-	lang_title_position = (200,20)
+	lang_title_position = (200,5)
 	# creating draw object
 	full_draw = ImageDraw.Draw(full_img)
 	# drawing colored center
 	full_draw.text(lang_title_position, lang_title_str, fill = lang_color, font = lang_title_fnt)
 	
 	# drawing Lang VotePerc
-	full_draw.text((250, 100), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
+	full_draw.text((220, 5 + 90), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
 	
 	# drawing Lang VoteCount
-	full_draw.text((270 + lang_voteperc_size[0], 140 - lang_votecount_size[1]),
-						lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
+	full_draw.text((240, 5 + 90 + 60), lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
 	
 	# drawing black outline... anchor is (290, 30)
 	# FIX LATER
@@ -205,9 +198,9 @@ q1_df = q1_df.sort_values('Q1_Academic', ascending = False).reset_index(drop = T
 for tmp_i, tmp_row in q1_df.iterrows():
 	# running function
 	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
-							   vote_percent = tmp_row['Q1_Academic_Perc'],
-							   vote_count = tmp_row['Q1_Academic'],
-							   q_name = 'Q1Academic')
+						  vote_percent = tmp_row['Q1_Academic_Perc'],
+						  vote_count = tmp_row['Q1_Academic'],
+						  q_name = 'Q1Academic')
 
 # Q2
 q2_df = main_survey_df[['Language', 'Q2_Current', 'Q2_Current_Perc']]
@@ -218,9 +211,9 @@ q2_df = q2_df.sort_values('Q2_Current', ascending = False).reset_index(drop = Tr
 for tmp_i, tmp_row in q2_df.iterrows():
 	# running function
 	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
-							   vote_percent = tmp_row['Q2_Current_Perc'],
-							   vote_count = tmp_row['Q2_Current'],
-							   q_name = 'Q2Current')
+						  vote_percent = tmp_row['Q2_Current_Perc'],
+						  vote_count = tmp_row['Q2_Current'],
+						  q_name = 'Q2Current')
 
 """
 STEP 3A: initial parallel coordinates plot
@@ -232,8 +225,8 @@ parallel_df = pd.melt(main_survey_df, id_vars = 'Language', value_vars = ['Q1_Ac
 # initial ggplot obj
 parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent', color = 'Language', group = 'Language'),
 						  data = parallel_df) +
-					geom_point() +
-					geom_line() +
+					geom_point(size = 5) +
+					geom_line(size = 3) +
 					scale_color_manual(values = colorhex_sortedlst, guide = False) +
 					scale_x_discrete(expand = (0.05,0)) +
 					scale_y_continuous(limits = (0,0.25),
@@ -245,7 +238,45 @@ parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent', color = 'Lan
 					theme_538() +
 					theme(axis_title_y = element_blank()))
     
-parallel_ggplot.save('parallel_ggplot.png', width = 3, height = 10, dpi = 200)
+parallel_ggplot.save('parallel_ggplot.png', width = 3, height = 16, dpi = 200)
+
+# reading the Parallel GGPlot as an Image
+paraPlot_img = Image.open('parallel_ggplot.png')
+
+# creating grey background
+fullPlot_background_img = Image.new('RGBA', (1800, paraPlot_img.size[1]), '#F0F0F0')
+
+# pasting the Paraplot onto the Background image
+fullPlot_img = fullPlot_background_img.copy()
+fullPlot_img.paste(paraPlot_img, box = (int(900 - (paraPlot_img.size[0]/2)), 0))
+
+"""
+STEP 3B: pasting the Lang Labels onto the sides of the plot
+"""
+# moving into the LanguageLabels directory
+os.chdir('./LanguageLabels')
+
+# iterating through each LangLabel, pasting the Label where it belongs on the ParaPlot
+for label_fname in os.listdir():
+	# defining the ImageObj of this label
+	label_imageObj = Image.open(label_fname)
+	
+	# asdf
+	if label_fname == 'Q1Academic_1Java.png':
+		fullPlot_img.paste(label_imageObj, (100,130))
+	elif label_fname == 'Q1Academic_2C.png':
+		fullPlot_img.paste(label_imageObj, (140, 600))
+	elif label_fname == 'Q1Academic_3C++.png':
+		fullPlot_img.paste(label_imageObj, (120, 880))
+	elif label_fname == 'Q1Academic_4Python.png':
+		fullPlot_img.paste(label_imageObj, (100, 1300))
+	elif label_fname == 'Q1Academic_5Assembly.png':
+		fullPlot_img.paste(label_imageObj, (70, 1420))
+
+# moving out into the main directory
+os.chdir('..')
+# saving fullPlot Image
+fullPlot_img.save("parallel_ggplot.png")
 
 # TOC
 tt.toc()
