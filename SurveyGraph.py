@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import itertools as it
 from pytictoc import TicToc
 from PIL import Image, ImageOps, ImageFont, ImageDraw
 from plotnine import *
@@ -43,7 +44,7 @@ colorhex_sortedlst = [colors_ref.at[cname, 'color'] for cname in colornames_sort
 """
 STEP 2: defining Create Language Label Image
 """
-def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name):
+def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name, tmp_imageObj_dict):
 	'''finding Color and finding Logo image'''
 	# addition to lang_rank
 	lang_rank += 1
@@ -94,7 +95,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 		# creating langFont
 		lang_title_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
 		# testing if at or below 80, breaking if so
-		if lang_title_fnt.getsize(lang_title_str)[1] <= 80:
+		if lang_title_fnt.getsize(lang_title_str)[1] <= 110:
 			break
 	
 	# finding the size of the title
@@ -109,7 +110,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 		# creating langFont
 		lang_voteperc_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
 		# testing if below 50, breaking if so
-		if lang_voteperc_fnt.getsize(lang_voteperc_str)[1] <= 50:
+		if lang_voteperc_fnt.getsize(lang_voteperc_str)[1] <= 70:
 			break
 	
 	# defining Lang VotePerc Size
@@ -124,7 +125,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 		# creating langFont
 		lang_votecount_fnt = ImageFont.truetype('ARLRDBD.TTF', fsize)
 		# testing if below 30, breaking if so
-		if lang_votecount_fnt.getsize(lang_votecount_str)[1] <= 30:
+		if lang_votecount_fnt.getsize(lang_votecount_str)[1] <= 60:
 			break	
 	
 	# defining Lang VoteCount Size
@@ -133,7 +134,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	'''White Background creation'''
 	# determining the width
 	# first, find the longer length between the Title, Perc, and Count
-	farthest_x = max([lang_title_size[0], lang_voteperc_size[0] + 20, lang_votecount_size[0] + 40])
+	farthest_x = max([lang_title_size[0], lang_voteperc_size[0] + lang_votecount_size[0] + 20])
 	
 	# creating Background Size, picking between Farthest Title or Count for the X width
 	background_size = (farthest_x + 215, 190)
@@ -141,7 +142,11 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	# creating white background
 	background_img = Image.new('RGBA', background_size, 'white')
 	# adding border
-	background_img = ImageOps.expand(background_img, border = 5, fill = lang_color)
+	if 'JavaScript' in lang_name or 'SQL' in lang_name:
+		background_img = ImageOps.expand(background_img, border = 3, fill = lang_color)
+		background_img = ImageOps.expand(background_img, border = 2, fill = '#3f3f3f')
+	else:
+		background_img = ImageOps.expand(background_img, border = 5, fill = lang_color)
 	
 	'''Pasting Logo'''
 	# pasting LangLogo onto background, creating full image
@@ -160,35 +165,41 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	lang_title_position = (200,5)
 	# creating draw object
 	full_draw = ImageDraw.Draw(full_img)
-	# drawing colored center
+	
+	# drawing black outlines for JavaScript and SQL
+	if 'JavaScript' in lang_name or 'SQL' in lang_name:
+		for tmp_text_pos, tmp_text_str, tmp_fnt in zip([(200, 5), (220, 105), (240 + lang_voteperc_size[0], 125)],
+													   [lang_title_str, lang_voteperc_str, lang_votecount_str],
+													   [lang_title_fnt, lang_voteperc_fnt, lang_votecount_fnt]):
+			for position_tup in (list(it.product(np.arange(tmp_text_pos[0] - 3, tmp_text_pos[0] + 4), [tmp_text_pos[1] + 1])) +	#bottom border
+								 list(it.product(np.arange(tmp_text_pos[0] - 1, tmp_text_pos[0] + 2), [tmp_text_pos[1] + 2])) +	#bottom border extra
+								 list(it.product(np.arange(tmp_text_pos[0] - 3, tmp_text_pos[0] + 4), [tmp_text_pos[1] - 1])) +	#top border
+								 list(it.product(np.arange(tmp_text_pos[0] - 1, tmp_text_pos[0] + 2), [tmp_text_pos[1] - 2])) +	#top border extra
+								 list(it.product([tmp_text_pos[0] - 1], np.arange(tmp_text_pos[1] -3, tmp_text_pos[1] +4))) +	#left border
+								 list(it.product([tmp_text_pos[0] - 2], np.arange(tmp_text_pos[1] -1, tmp_text_pos[1] +2))) +	#left border extra
+								 list(it.product([tmp_text_pos[0] + 1], np.arange(tmp_text_pos[1] -3, tmp_text_pos[1] +4))) +	#right border
+								 list(it.product([tmp_text_pos[0] + 2], np.arange(tmp_text_pos[1] -1, tmp_text_pos[1] +2)))):	#right border extra
+				# drawing black shift
+				full_draw.text(position_tup, tmp_text_str, fill = '#3f3f3f', font = tmp_fnt)
+	# drawing colored center for title
 	full_draw.text(lang_title_position, lang_title_str, fill = lang_color, font = lang_title_fnt)
 	
 	# drawing Lang VotePerc
-	full_draw.text((220, 5 + 90), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
+	full_draw.text((220, 5 + 100), lang_voteperc_str, fill = lang_color, font = lang_voteperc_fnt)
 	
 	# drawing Lang VoteCount
-	full_draw.text((240, 5 + 90 + 60), lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
+	full_draw.text((240 + lang_voteperc_size[0], 5 + 120), lang_votecount_str, fill = lang_color, font = lang_votecount_fnt)
 	
-	# drawing black outline... anchor is (290, 30)
-	# FIX LATER
-	'''
-	for position_tup in (list(it.product(np.arange(287, 294), [18])) +	#top border
-							  list(it.product(np.arange(289, 291), [17])) +	#top border extra
-							  list(it.product([292], np.arange(18, 23))) +	#right border
-							  list(it.product([293], np.arange(19, 22))) +	#right border extra
-							  list(it.product(np.arange(287,294), [22])) +	#bottom border
-							  list(it.product(np.arange(289,291), [23])) +	#bottom border extra
-							  list(it.product([288], np.arange(18,23))) +	#left border
-							  list(it.product([287], np.arange(19,22)))):	#left border extra
-		full_draw.text(position_tup, lang_name, fill = 'black', font = lang_title_fnt)
-	'''
+	# adding the image obj to the Dict
+	tmp_imageObj_dict[q_name + '_' + str(lang_rank) + lang_name] = full_img
 	
-	# moving into proper folder and saving image
-	os.chdir('.\LanguageLabels')
-	full_img.save(q_name + '_' + str(lang_rank) + lang_name + '.png')
-	os.chdir('..')
+	# returning the Image Obj dict
+	return tmp_imageObj_dict
 
 '''applying function'''
+#creating the Image Object dict
+labels_imageObj_dict = {}
+
 # Q1
 q1_df = main_survey_df[['Language', 'Q1_Academic', 'Q1_Academic_Perc']]
 # sorting
@@ -197,10 +208,11 @@ q1_df = q1_df.sort_values('Q1_Academic', ascending = False).reset_index(drop = T
 # iterating through each Q1 row
 for tmp_i, tmp_row in q1_df.iterrows():
 	# running function
-	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
-						  vote_percent = tmp_row['Q1_Academic_Perc'],
-						  vote_count = tmp_row['Q1_Academic'],
-						  q_name = 'Q1Academic')
+	labels_imageObj_dict = CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
+												 vote_percent = tmp_row['Q1_Academic_Perc'],
+												 vote_count = tmp_row['Q1_Academic'],
+												 q_name = 'Q1Academic',
+												 tmp_imageObj_dict = labels_imageObj_dict)
 
 # Q2
 q2_df = main_survey_df[['Language', 'Q2_Current', 'Q2_Current_Perc']]
@@ -210,10 +222,11 @@ q2_df = q2_df.sort_values('Q2_Current', ascending = False).reset_index(drop = Tr
 # iterating through each Q1 row
 for tmp_i, tmp_row in q2_df.iterrows():
 	# running function
-	CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
-						  vote_percent = tmp_row['Q2_Current_Perc'],
-						  vote_count = tmp_row['Q2_Current'],
-						  q_name = 'Q2Current')
+	labels_imageObj_dict = CreateLangLabelImg_fx(lang_rank = tmp_i, lang_name = tmp_row['Language'],
+												 vote_percent = tmp_row['Q2_Current_Perc'],
+												 vote_count = tmp_row['Q2_Current'],
+												 q_name = 'Q2Current',
+												 tmp_imageObj_dict = labels_imageObj_dict)
 
 """
 STEP 3A: initial parallel coordinates plot
@@ -221,60 +234,83 @@ STEP 3A: initial parallel coordinates plot
 # initial Parallel df
 parallel_df = pd.melt(main_survey_df, id_vars = 'Language', value_vars = ['Q1_Academic_Perc', 'Q2_Current_Perc'],
                       var_name = 'QType', value_name = 'Percent')
+# nudging the tie apart a bit
+parallel_df.loc[parallel_df.index[parallel_df['Language'] == 'Java'], 'Percent'] += 0.001
+parallel_df.loc[parallel_df.index[parallel_df['Language'] == 'JavaScript'], 'Percent'] -= 0.001
+
+# creating the PercentLabels_df
+percentLabels_df = pd.DataFrame(data = {'y_position': list(np.arange(0, 0.26, 0.05)) * 2, 
+										'x_position': np.repeat(['Q1_Academic_Perc', 'Q2_Current_Perc'], 6)})
+percentLabels_df['my_label'] = (percentLabels_df['y_position']*100).astype(int).astype(str) + "%"
+
+# creating the QuestionStrings
+questionStrings_lst = ['"Languages formally taught\nin School or University?"',
+				 '"Languages you Currently\nUse on a regular basis?"']
 
 # initial ggplot obj
-parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent', color = 'Language', group = 'Language'),
+parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent'),
 						  data = parallel_df) +
-					geom_point(size = 5) +
-					geom_line(size = 3) +
-					scale_color_manual(values = colorhex_sortedlst, guide = False) +
-					scale_x_discrete(expand = (0.05,0)) +
-					scale_y_continuous(limits = (0,0.25),
-									   breaks = list(np.arange(0,0.3,0.05)),
-									   labels = ['{:.0%}'.format(num) for num in np.arange(0,0.3, 0.05)],
-									   expand = (0.01,0)) +
-					labs(title = 'Programmer Survey: Languages Academic vs. CurrentUse',
-						 x = 'Question', y = 'Percentage') +
-					theme_538() +
-					theme(axis_title_y = element_blank()))
+				   geom_text(mapping = aes(x = 'x_position', y = 'y_position', label = 'my_label'),
+							 data = percentLabels_df,
+							 ha = 'right', va = 'bottom',
+							 size = 20, fontstyle = 'oblique',
+							 nudge_x = -0.05) +
+				   geom_line(mapping = aes(color = 'Language', group = 'Language'), size = 3.5) +
+				   geom_point(size = 7, color = 'black') +
+				   geom_point(mapping = aes(color = 'Language', group = 'Language'), size = 6) +
+				   scale_color_manual(values = colorhex_sortedlst, guide = False) +
+				   scale_x_discrete(expand = (0.05,0)) +
+				   scale_y_continuous(limits = (0,0.25),
+									  breaks = list(np.arange(0,0.3,0.05)),
+									  expand = (0.02,0)) +
+				   labs(title = 'Programmer Survey:\nComparison of which Programming Languages\nwere Learned in School vs.\nthose which are Currently Used',
+						x = 'Question', y = 'Percentage') +
+				   theme_538() +
+				   theme(axis_title_y = element_blank(), axis_text_y = element_blank(),
+						 axis_title_x = element_blank(), axis_text_x = element_blank(),
+						 panel_grid = element_line(color = 'black'), panel_grid_minor_y = element_blank(),
+						 plot_title = element_text(size = 30)))
     
-parallel_ggplot.save('parallel_ggplot.png', width = 3, height = 16, dpi = 200)
+parallel_ggplot.save('parallel_ggplot.png', width = 3, height = 22, dpi = 200)
 
 # reading the Parallel GGPlot as an Image
 paraPlot_img = Image.open('parallel_ggplot.png')
 
 # creating grey background
-fullPlot_background_img = Image.new('RGBA', (1800, paraPlot_img.size[1]), '#F0F0F0')
+fullPlot_background_img = Image.new('RGBA', (2700, paraPlot_img.size[1] + 200), '#F0F0F0')
 
 # pasting the Paraplot onto the Background image
 fullPlot_img = fullPlot_background_img.copy()
-fullPlot_img.paste(paraPlot_img, box = (int(900 - (paraPlot_img.size[0]/2)), 0))
+fullPlot_img.paste(paraPlot_img, box = (int(1350 - (paraPlot_img.size[0]/2)), 0))
 
 """
 STEP 3B: pasting the Lang Labels onto the sides of the plot
 """
-# moving into the LanguageLabels directory
-os.chdir('./LanguageLabels')
+# defining the qAndLang To PlotPosition dict
+qAndLang_to_plotYPosition_dict = {'Q1Academic_1Java': 350, 'Q1Academic_2C': 820,
+								  'Q1Academic_3C++': 1300, 'Q1Academic_4Python': 1550,
+								  'Q1Academic_5Assembly' : 1800, 'Q1Academic_6MATLAB': 2050,
+								  'Q1Academic_7C#': 2300, 'Q1Academic_8JavaScript': 2550,
+								  'Q1Academic_9SQL': 2800, 'Q1Academic_10PHP': 3050,
+								  'Q2Current_1Python': 500,  'Q2Current_2Java':900,
+								  'Q2Current_3JavaScript': 1100, 'Q2Current_4C++': 1500,
+								  'Q2Current_5C': 1900, 'Q2Current_6C#': 2100,
+								  'Q2Current_7SQL': 2400, 'Q2Current_8PHP': 2600,
+								  'Q2Current_9Assembly': 2800, 'Q2Current_10MATLAB': 3000}
 
-# iterating through each LangLabel, pasting the Label where it belongs on the ParaPlot
-for label_fname in os.listdir():
-	# defining the ImageObj of this label
-	label_imageObj = Image.open(label_fname)
-	
-	# asdf
-	if label_fname == 'Q1Academic_1Java.png':
-		fullPlot_img.paste(label_imageObj, (100,130))
-	elif label_fname == 'Q1Academic_2C.png':
-		fullPlot_img.paste(label_imageObj, (140, 600))
-	elif label_fname == 'Q1Academic_3C++.png':
-		fullPlot_img.paste(label_imageObj, (120, 880))
-	elif label_fname == 'Q1Academic_4Python.png':
-		fullPlot_img.paste(label_imageObj, (100, 1300))
-	elif label_fname == 'Q1Academic_5Assembly.png':
-		fullPlot_img.paste(label_imageObj, (70, 1420))
+# iterating through each LangLabel image, pasting the Label where it belongs on the ParaPlot
+for qAndLang_str, label_imageObj in labels_imageObj_dict.items():
+	# plotting Label onto image
+	try:
+		if 'Academic' in qAndLang_str:
+			fullPlot_img.paste(label_imageObj,
+							   (1090 - label_imageObj.size[0] ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
+		elif 'Current' in qAndLang_str:
+			fullPlot_img.paste(label_imageObj,
+							   (1620 ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
+	except KeyError:
+		print(f'{qAndLang_str} missing')
 
-# moving out into the main directory
-os.chdir('..')
 # saving fullPlot Image
 fullPlot_img.save("parallel_ggplot.png")
 
