@@ -263,7 +263,7 @@ parallel_ggplot = (ggplot(mapping = aes(x = 'QType', y = 'Percent'),
 				   scale_y_continuous(limits = (0,0.25),
 									  breaks = list(np.arange(0,0.3,0.05)),
 									  expand = (0.02,0)) +
-				   labs(title = 'Programmer Survey:\nComparison of which Programming Languages\nwere Learned in School vs.\nthose which are Currently Used',
+				   labs(title = 'Programmer Survey:\nWhich Languages were Learned in School\ncompared to those in Current Use',
 						x = 'Question', y = 'Percentage') +
 				   theme_538() +
 				   theme(axis_title_y = element_blank(), axis_text_y = element_blank(),
@@ -285,18 +285,21 @@ fullPlot_img.paste(paraPlot_img, box = (int(1350 - (paraPlot_img.size[0]/2)), 0)
 
 """
 STEP 3B: pasting the Lang Labels onto the sides of the plot
+then Lines
+pasting Question text
 """
+''' Lang Labels '''
 # defining the qAndLang To PlotPosition dict
-qAndLang_to_plotYPosition_dict = {'Q1Academic_1Java': 350, 'Q1Academic_2C': 820,
-								  'Q1Academic_3C++': 1300, 'Q1Academic_4Python': 1550,
-								  'Q1Academic_5Assembly' : 1800, 'Q1Academic_6MATLAB': 2050,
-								  'Q1Academic_7C#': 2300, 'Q1Academic_8JavaScript': 2550,
-								  'Q1Academic_9SQL': 2800, 'Q1Academic_10PHP': 3050,
-								  'Q2Current_1Python': 500,  'Q2Current_2Java':900,
-								  'Q2Current_3JavaScript': 1100, 'Q2Current_4C++': 1500,
-								  'Q2Current_5C': 1900, 'Q2Current_6C#': 2100,
-								  'Q2Current_7SQL': 2400, 'Q2Current_8PHP': 2600,
-								  'Q2Current_9Assembly': 2800, 'Q2Current_10MATLAB': 3000}
+qAndLang_to_plotYPosition_dict = {'Q1Academic_1Java': 330, 'Q1Academic_2C': 1140,
+								  'Q1Academic_3C++': 1570, 'Q1Academic_4Python': 1850,
+								  'Q1Academic_5Assembly' : 2100, 'Q1Academic_6MATLAB': 2350,
+								  'Q1Academic_7C#': 2600, 'Q1Academic_8JavaScript': 2850,
+								  'Q1Academic_9SQL': 3100, 'Q1Academic_10PHP': 3350,
+								  'Q2Current_1Python': 700,  'Q2Current_2Java':1150,
+								  'Q2Current_3JavaScript': 1350, 'Q2Current_4C++': 1870,
+								  'Q2Current_5C': 2200, 'Q2Current_6C#': 2450,
+								  'Q2Current_7SQL': 2700, 'Q2Current_8PHP': 2950,
+								  'Q2Current_9Assembly': 3200, 'Q2Current_10MATLAB': 3450}
 
 # iterating through each LangLabel image, pasting the Label where it belongs on the ParaPlot
 for qAndLang_str, label_imageObj in labels_imageObj_dict.items():
@@ -304,12 +307,84 @@ for qAndLang_str, label_imageObj in labels_imageObj_dict.items():
 	try:
 		if 'Academic' in qAndLang_str:
 			fullPlot_img.paste(label_imageObj,
-							   (1090 - label_imageObj.size[0] ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
+							   (1040 - label_imageObj.size[0] ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
 		elif 'Current' in qAndLang_str:
 			fullPlot_img.paste(label_imageObj,
-							   (1620 ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
+							   (1670 ,qAndLang_to_plotYPosition_dict[qAndLang_str]))
 	except KeyError:
 		print(f'{qAndLang_str} missing')
+
+'''Lines to labels '''
+# creating draw object
+fullPlot_draw = ImageDraw.Draw(fullPlot_img)
+
+# defining Q1 LineToLabels DataFrame
+q1_lineToLabels_df = pd.DataFrame({"Language": q1_df['Language'],
+								   'Color': q1_df['Language'].map(colors_ref['color']),
+								   'Start_xy': [(1040, y_pos) for y_pos in
+												[330, 1140, 1570, 1850, 2100, 2350, 2600, 2850, 3100, 3350]],
+								   'End_xy': [(1110, y_pos) for y_pos in 
+											  [700, 1150, 1350, 1870, 2200, 2450, 2700, 2950, 3200, 3450]]})
+# plotting each line
+for tmp_i, tmp_row in q1_lineToLabels_df.iterrows():
+	fullPlot_draw.line(xy = [tmp_row['Start_xy'], tmp_row['End_xy']], fill = tmp_row['Color'], width = 25)
+
+# defining Q2 LineTOLabels DF
+q2_lineToLabels_df = pd.DataFrame({"Language": q2_df['Language'],
+								   'Color': q2_df['Language'].map(colors_ref['color']),
+								   'Start_xy': [(1550, y_pos) for y_pos in
+												[330, 1140, 1570, 1850, 2100, 2350, 2600, 2850, 3100, 3350]],
+								   'End_xy': [(1620, y_pos) for y_pos in 
+											  [700, 1150, 1350, 1870, 2200, 2450, 2700, 2950, 3200, 3450]]})
+# plotting each line
+for tmp_i, tmp_row in q2_lineToLabels_df.iterrows():
+	fullPlot_draw.line(xy = [tmp_row['Start_xy'], tmp_row['End_xy']], fill = tmp_row['Color'], width = 25)
+
+'''Questions X Axis '''
+# defining font
+question_xaxis_fnt = ImageFont.truetype('ARLRDBD.TTF', 80)
+
+'''Q1'''
+# defining Question1 _Position
+question1_position = (500,3700)
+# defining Q1 Str
+question1_textstr = "What languages were you formally\ntaught in school or University?"
+
+# drawing black background
+for position_tup in (list(it.product(np.arange(question1_position[0] - 3, question1_position[0] + 4), [question1_position[1] + 1])) +	#bottom border
+					 list(it.product(np.arange(question1_position[0] - 1, question1_position[0] + 2), [question1_position[1] + 2])) +	#bottom border extra
+					 list(it.product(np.arange(question1_position[0] - 3, question1_position[0] + 4), [question1_position[1] - 1])) +	#top border
+					 list(it.product(np.arange(question1_position[0] - 1, question1_position[0] + 2), [question1_position[1] - 2])) +	#top border extra
+					 list(it.product([question1_position[0] - 1], np.arange(question1_position[1] -3, question1_position[1] +4))) +	#left border
+					 list(it.product([question1_position[0] - 2], np.arange(question1_position[1] -1, question1_position[1] +2))) +	#left border extra
+					 list(it.product([question1_position[0] + 1], np.arange(question1_position[1] -3, question1_position[1] +4))) +	#right border
+					 list(it.product([question1_position[0] + 2], np.arange(question1_position[1] -1, question1_position[1] +2)))):	#right border extra
+	# drawing black shift
+	fullPlot_draw.text(position_tup, question1_textstr, fill = '#3f3f3f', font = question_xaxis_fnt)
+
+# drawing White Center
+fullPlot_draw.text(question1_position, question1_textstr, fill = 'white', font = question_xaxis_fnt)
+
+'''Q2'''
+# defining Question1 _Position
+question2_position = (1600,3700)
+# defining Q1 Str
+question2_textstr = "What languages are you currently\nthe most familiar with, and use\non a regular basis?"
+
+# drawing black background
+for position_tup in (list(it.product(np.arange(question2_position[0] - 3, question2_position[0] + 4), [question2_position[1] + 1])) +	#bottom border
+					 list(it.product(np.arange(question2_position[0] - 1, question2_position[0] + 2), [question2_position[1] + 2])) +	#bottom border extra
+					 list(it.product(np.arange(question2_position[0] - 3, question2_position[0] + 4), [question2_position[1] - 1])) +	#top border
+					 list(it.product(np.arange(question2_position[0] - 1, question2_position[0] + 2), [question2_position[1] - 2])) +	#top border extra
+					 list(it.product([question2_position[0] - 1], np.arange(question2_position[1] -3, question2_position[1] +4))) +	#left border
+					 list(it.product([question2_position[0] - 2], np.arange(question2_position[1] -1, question2_position[1] +2))) +	#left border extra
+					 list(it.product([question2_position[0] + 1], np.arange(question2_position[1] -3, question2_position[1] +4))) +	#right border
+					 list(it.product([question2_position[0] + 2], np.arange(question2_position[1] -1, question2_position[1] +2)))):	#right border extra
+	# drawing black shift
+	fullPlot_draw.text(position_tup, question2_textstr, fill = '#3f3f3f', font = question_xaxis_fnt)
+
+# drawing White Center
+fullPlot_draw.text(question2_position, question2_textstr, fill = 'white', font = question_xaxis_fnt)
 
 # saving fullPlot Image
 fullPlot_img.save("parallel_ggplot.png")
