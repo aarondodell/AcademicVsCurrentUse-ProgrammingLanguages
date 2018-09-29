@@ -135,7 +135,7 @@ def CreateLangLabelImg_fx(lang_rank, lang_name, vote_percent, vote_count, q_name
 	'''White Background creation'''
 	# determining the width
 	# first, find the longer length between the Title, Perc, and Count
-	farthest_x = max([lang_title_size[0], lang_voteperc_size[0] + lang_votecount_size[0] + 20])
+	farthest_x = max([lang_title_size[0], lang_voteperc_size[0] + lang_votecount_size[0] + 35])
 	
 	# creating Background Size, picking between Farthest Title or Count for the X width
 	background_size = (farthest_x + 215, 190)
@@ -304,8 +304,8 @@ qAndLang_to_plotYPosition_dict = {'Q1Academic_Java': 370, 'Q1Academic_C': 1170,
 								  'Q2Current_Python': 715,  'Q2Current_Java':1205,
 								  'Q2Current_JavaScript': 1405, 'Q2Current_C++': 1930,
 								  'Q2Current_C': 2230, 'Q2Current_C#': 2460,
-								  'Q2Current_SQL': 2690, 'Q2Current_PHP': 3010,
-								  'Q2Current_Assembly': 3240, 'Q2Current_MATLAB': 3440}
+								  'Q2Current_SQL': 2690, 'Q2Current_PHP': 2980,
+								  'Q2Current_Assembly': 3210, 'Q2Current_MATLAB': 3440}
 
 # iterating through each LangLabel image, pasting the Label where it belongs on the ParaPlot
 for qAndLang_str, label_imageObj in labels_imageObj_dict.items():
